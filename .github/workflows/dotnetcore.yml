@@ -32,7 +32,13 @@ jobs:
     # Publish
     - name: publish on version change
       if: ${{ github.event_name == 'release' }}
-      uses: rohith/publish-nuget@v2.5.5
-      with:
-        PROJECT_FILE_PATH: PreMailer.Net/PreMailer.Net/PreMailer.Net.csproj
-        NUGET_KEY: ${{secrets.NUGET_APIKEY}}
+      working-directory: ./PreMailer.Net
+      # This should use the GITHUB_TOKEN to do the actual publish, rather than needing a secret
+      run: |
+        dotnet nuget add source --username ea-itops --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/eventsair/index.json"
+
+        dotnet build --configuration Release
+
+        dotnet pack PreMailer.Net\PreMailer.Net.csproj --configuration Release --include-symbols
+
+        dotnet nuget push "bin/Release/Premailer.Net.2.8.4-beta.nupkg" --source "github"
